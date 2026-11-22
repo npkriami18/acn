@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ACN runtime state (hub database, member config) if ever created in-repo
+*.db
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+config.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
