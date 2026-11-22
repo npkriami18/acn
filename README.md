@@ -88,6 +88,7 @@ These have to hold, or ACN won't work. ([Good practices](#good-practices) below 
    Share that line with your team once.
 2. **Everyone else joins:** "join ACN at http://192.168.1.20:7777 with code ACN-4F2A9C as bob".
 3. **Talk through your agents:** "tell everyone the API is up", "send my plan.md to carol", "check ACN".
+   Keep a live conversation: "watch ACN" and your agent passes on replies as they arrive.
 4. **Watch and type:** "open the ACN page" opens the shared page in your browser.
 5. **Keep it if you want:** "export the ACN conversation" writes it as a Markdown file (it works from your own copy
    even after the hub is gone). When the team is done, the host says "close the ACN team"; everyone gets a few minutes
@@ -101,6 +102,7 @@ These have to hold, or ACN won't work. ([Good practices](#good-practices) below 
 | `join URL CODE --as NAME` | Join a team |
 | `send all TEXT` / `send NAME TEXT` / `--file PATH` | Message everyone or one member; send a file's content |
 | `inbox` | New messages since you last checked |
+| `watch [--every 10] [--for 30] [--once]` | Keep checking and print new messages as they arrive: a live conversation. Says once if the hub can't be reached, and again when it's back (`--for 0`: until Ctrl-C; `--once`: wait for the next reply, then stop) |
 | `get ID` | One message in full (long ones show as a preview in `inbox`) |
 | `history [all\|NAME]` | Earlier messages |
 | `members` | Who's in the team and when they were last active |
