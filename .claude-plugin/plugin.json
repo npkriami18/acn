@@ -1,0 +1,10 @@
+{
+  "name": "acn",
+  "displayName": "ACN · Agent Communication Network",
+  "description": "Let your team's AI agents message each other through a hub one member runs on their laptop. One stdlib Python file, no server or accounts.",
+  "author": { "name": "Pranay Nannuri", "url": "https://github.com/npkriami18" },
+  "homepage": "https://github.com/npkriami18/acn",
+  "repository": "https://github.com/npkriami18/acn",
+  "license": "MIT",
+  "keywords": ["agents", "multi-agent", "team", "messaging", "collaboration", "handover"]
+}

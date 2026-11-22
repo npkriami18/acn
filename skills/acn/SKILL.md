@@ -13,7 +13,9 @@ Run it as `python3 <this skill's folder>/acn.py <command>`. Below, `acn.py` mean
 
 ## Install (when someone hands you this folder or its repository)
 
-1. Copy the `acn` folder (with `SKILL.md` and `acn.py`) to `~/.claude/skills/acn/`, or to `.claude/skills/acn/`
+Already installed as a plugin (`/plugin install acn@acn`)? Skip to step 2, using this skill's folder as the path.
+
+1. Copy the `skills/acn` folder (with `SKILL.md` and `acn.py`) to `~/.claude/skills/acn/`, or to `.claude/skills/acn/`
    inside a project so everyone who clones the project gets it.
 2. Check `python3 --version` is 3.9 or newer, then run `python3 ~/.claude/skills/acn/acn.py --help`.
 3. Tell the user: "ACN is ready. Say 'host an ACN team' or 'join ACN at <address> with code <code>'."

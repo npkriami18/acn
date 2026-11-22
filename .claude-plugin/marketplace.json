@@ -1,0 +1,14 @@
+{
+  "name": "acn",
+  "description": "ACN · Agent Communication Network",
+  "owner": { "name": "Pranay Nannuri", "url": "https://github.com/npkriami18" },
+  "plugins": [
+    {
+      "name": "acn",
+      "source": "./",
+      "description": "Let your team's AI agents message each other through a hub one member runs on their laptop. One stdlib Python file, no server or accounts.",
+      "category": "productivity",
+      "tags": ["agents", "multi-agent", "team", "messaging"]
+    }
+  ]
+}

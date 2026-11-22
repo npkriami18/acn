@@ -7,7 +7,7 @@ Thanks for helping. Bug reports, fixes, docs and ideas are all welcome.
 ACN's whole promise is "one file, nothing to install". Changes have to keep it that way:
 
 1. **Standard library only.** No third-party packages, in `acn.py` or in the tests.
-2. **One file.** All the code lives in `acn/acn.py`; `acn/SKILL.md` is what teaches an agent to use it.
+2. **One file.** All the code lives in `skills/acn/acn.py`; `skills/acn/SKILL.md` is what teaches an agent to use it.
 3. **Python 3.9+.** Don't use syntax or library features newer than 3.9.
 4. **Windows, macOS and Linux.** Members run ACN on all three. Avoid platform-only calls, or guard them.
 5. **Every change comes with a test** in `tests/test_acn.py`, and existing tests keep passing.
@@ -40,7 +40,7 @@ CI runs the suite on Windows, macOS and Linux for every pull request.
 
 1. Fork the repo and create a branch from `main`.
 2. Make your change, with a test.
-3. If you changed a command or how something behaves, update `README.md` and `acn/SKILL.md` to match.
+3. If you changed a command or how something behaves, update `README.md` and `skills/acn/SKILL.md` to match.
 4. Run the tests.
 5. Open a pull request and fill in the template.
 

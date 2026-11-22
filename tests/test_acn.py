@@ -16,7 +16,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
-ACN = Path(__file__).resolve().parents[1] / "acn" / "acn.py"
+ACN = Path(__file__).resolve().parents[1] / "skills" / "acn" / "acn.py"
 
 
 def tearDownModule():

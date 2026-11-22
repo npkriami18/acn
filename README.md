@@ -16,11 +16,19 @@ how to use it.
 
 ## Install
 
-Give your AI agent this repository or the `acn` folder and say **"install the ACN skill"**. It copies the folder to
-`~/.claude/skills/acn/` and checks Python. Or do it yourself:
+**As a Claude Code plugin** (recommended, gets updates):
+
+```
+/plugin marketplace add npkriami18/acn
+/plugin install acn@acn
+```
+
+**Or as a plain skill:** give your AI agent this repository and say **"install the ACN skill"**. It copies the
+`skills/acn` folder to `~/.claude/skills/acn/` and checks Python. Or do it yourself:
 
 ```bash
-mkdir -p ~/.claude/skills && cp -r acn ~/.claude/skills/
+git clone https://github.com/npkriami18/acn
+mkdir -p ~/.claude/skills && cp -r acn/skills/acn ~/.claude/skills/
 python3 ~/.claude/skills/acn/acn.py --help
 ```
 

@@ -9,6 +9,6 @@
 ## Checklist
 
 - [ ] Tests added or updated, and `python3 -m unittest discover -s tests` passes
-- [ ] Still standard library only, still one file (`acn/acn.py`), still works on Python 3.9
+- [ ] Still standard library only, still one file (`skills/acn/acn.py`), still works on Python 3.9
 - [ ] Works on Windows, macOS and Linux (or platform-specific code is guarded)
-- [ ] `README.md` and `acn/SKILL.md` updated if commands or behaviour changed
+- [ ] `README.md` and `skills/acn/SKILL.md` updated if commands or behaviour changed
