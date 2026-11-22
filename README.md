@@ -209,3 +209,7 @@ needs `cloudflared` and internet access, so it only runs when asked:
 ```bash
 ACN_TEST_TUNNEL=1 python3 -m unittest -v tests.test_acn.TunnelTest
 ```
+
+## License
+
+[MIT](LICENSE)
