@@ -27,6 +27,7 @@ import secrets
 import shutil
 import signal
 import socket
+import socketserver
 import sqlite3
 import subprocess
 import sys
@@ -284,6 +285,12 @@ class Server(ThreadingHTTPServer):
         super().__init__(*args)
         self.slots = threading.BoundedSemaphore(MAX_CONNECTIONS)
 
+    def server_bind(self):
+        # HTTPServer.server_bind also looks up this laptop's DNS name (socket.getfqdn), which can take over a minute
+        # on Macs with slow reverse DNS. Nothing here uses that name, so skip it.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
     def process_request(self, request, client_address):
         if not self.slots.acquire(blocking=False):
             self.shutdown_request(request)
@@ -394,6 +401,18 @@ def proof(code, nonce):
 
 def plural(n, word):
     return f"{n} {word}" + ("" if n == 1 else "s")
+
+
+def remove_files(*paths, tries=40):
+    """Delete files a hub that's shutting down may still hold: Windows keeps them locked a moment after it exits."""
+    for _ in range(tries):
+        try:
+            for path in paths:
+                Path(path).unlink(missing_ok=True)
+            return True
+        except PermissionError:
+            time.sleep(0.25)
+    return False
 
 
 def clean_name(value):
@@ -669,7 +688,7 @@ def cmd_host(a):
     resume = bool(state) and not a.new and Path(state["db"]).exists()
     if not resume:
         for old in HOME.glob("team-*.db"):           # a stopped or abandoned team's leftovers
-            old.unlink(missing_ok=True)
+            remove_files(old, tries=4)               # still locked by a hub that's exiting: leave it for next time
         state = {"port": a.port or DEFAULT_PORT, "code": "ACN-" + secrets.token_urlsafe(10),
                  "hub": secrets.token_hex(8), "secret": secrets.token_urlsafe(24),
                  "db": str(HOME / f"team-{int(time.time())}.db")}
@@ -896,7 +915,7 @@ def rejoin(a, url, info, cfg):
             call("POST", local, "/api/shutdown", {}, headers={"X-ACN-Secret": old["secret"]})
             time.sleep(0.5)
         stop_tunnel(old)
-        Path(old["db"]).unlink(missing_ok=True)
+        remove_files(old["db"])
         HOSTFILE.unlink(missing_ok=True)
         print("This laptop hosted the team before: its old hub is retired.")
 
@@ -937,7 +956,7 @@ def cmd_takeover(a):
             start_tunnel(state)
     except BaseException:                             # failed or interrupted (Ctrl-C): undo the half-started hub
         shut_down(state)
-        db_path.unlink(missing_ok=True)
+        remove_files(db_path)
         HOSTFILE.unlink(missing_ok=True)
         raise
     save(CONFIG, {**cfg, "url": f"http://127.0.0.1:{state['port']}", "instance": info["instance"],
@@ -1070,13 +1089,7 @@ def cmd_stop(_):
         die("This laptop isn't hosting a team.")
     shut_down(state)
     stop_tunnel(state)
-    for _ in range(20):                               # Windows keeps the file locked a moment after the hub exits
-        try:
-            for db in [Path(state["db"]), *HOME.glob("team-*.db")]:
-                db.unlink(missing_ok=True)
-            break
-        except PermissionError:
-            time.sleep(0.25)
+    remove_files(state["db"], *HOME.glob("team-*.db"))
     HOSTFILE.unlink(missing_ok=True)
     print("Hub stopped and its conversation deleted, without telling anyone (`close` does that). Members' laptops "
           "keep their own copies until they `leave`.")
