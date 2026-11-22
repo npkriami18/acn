@@ -1,5 +1,7 @@
 """End-to-end: a real hub on this machine and four members, each with its own ACN_HOME as if on its own laptop.
 Run from the repo root:  python3 -m unittest -v tests/test_acn.py"""
+import errno
+import importlib.util
 import json
 import os
 import shutil
@@ -41,9 +43,9 @@ class Laptop:
         self.home = tempfile.mkdtemp(prefix="acn-")
         Laptop.every.append(self)
 
-    def run(self, *args, ok=True, timeout=30):
+    def run(self, *args, ok=True, timeout=30, env=None):
         r = subprocess.run([sys.executable, str(ACN), *args], capture_output=True, text=True, timeout=timeout,
-                           env={**os.environ, "ACN_HOME": self.home})
+                           env={**os.environ, "ACN_HOME": self.home, **(env or {})})
         if ok and r.returncode != 0:
             raise AssertionError(f"acn {' '.join(args)} failed: {r.stderr}")
         return r
@@ -568,6 +570,96 @@ class StopTest(unittest.TestCase):
         self.assertFalse(Path(db).exists())
         self.assertIn("Can't reach the hub", Laptop().run("join", f"http://127.0.0.1:{port}", "X", "--as", "z",
                                                           ok=False).stderr)
+
+
+def load_acn():
+    spec = importlib.util.spec_from_file_location("acn_under_test", ACN)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class ReachabilityTest(unittest.TestCase):
+    """When the hub can't be reached, the message says why and what to do, without misleading advice."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.acn = load_acn()
+
+    def test_no_route_on_the_local_network_points_at_client_isolation(self):
+        for error in (OSError(errno.EHOSTUNREACH, "No route to host"), OSError(errno.EHOSTUNREACH),
+                      urllib.error.URLError(OSError(errno.EHOSTUNREACH, "No route to host")),
+                      OSError(10065, "WSAEHOSTUNREACH")):
+            text = self.acn.hint("http://192.168.1.13:7777", error)
+            self.assertIn("client isolation", text, error)
+            self.assertIn("host --tunnel", text, error)
+
+    def test_no_route_to_a_public_address_says_nothing_about_isolation(self):
+        self.assertEqual(self.acn.hint("http://8.8.8.8:7777", OSError(errno.EHOSTUNREACH, "No route")), "")
+        self.assertEqual(self.acn.hint("http://hub.example.com:7777", OSError(errno.EHOSTUNREACH, "No route")), "")
+
+    def test_refused_and_timeout_get_their_own_sentence(self):
+        for error in (ConnectionRefusedError(), ConnectionRefusedError(errno.ECONNREFUSED, "refused"),
+                      urllib.error.URLError(ConnectionRefusedError(errno.ECONNREFUSED, "refused"))):
+            text = self.acn.hint("http://192.168.1.13:7777", error)
+            self.assertIn("nothing listens on that port", text, error)
+            self.assertNotIn("client isolation", text)
+        for error in (TimeoutError(), socket.timeout("timed out"), urllib.error.URLError(socket.timeout("timed out"))):
+            self.assertIn("firewall", self.acn.hint("http://192.168.1.13:7777", error), error)
+
+    def test_other_errors_add_nothing(self):
+        dns = urllib.error.URLError(socket.gaierror(-2, "Name or service not known"))
+        self.assertEqual(self.acn.hint("https://gone.trycloudflare.com", dns), "")
+        not_found = urllib.error.HTTPError("http://x", 404, "Not Found", {}, None)
+        self.assertEqual(self.acn.hint("https://x.trycloudflare.com", not_found), "")
+
+    def test_a_dead_tunnel_is_recognised(self):
+        for code in (502, 503, 530):
+            error = urllib.error.HTTPError("https://x.trycloudflare.com/api/ping", code, "", {}, None)
+            self.assertIn("hub behind it doesn't", self.acn.hint("https://x.trycloudflare.com", error))
+            self.assertEqual(self.acn.hint("https://hub.example.com", error), "")   # only for quick tunnels
+
+    def test_a_first_join_to_nothing_says_why_and_skips_takeover_advice(self):
+        err = Laptop().run("join", f"http://127.0.0.1:{free_port()}", "ACN-x", "--as", "z", ok=False)
+        self.assertNotEqual(err.returncode, 0)
+        self.assertIn("nothing listens on that port", err.stderr)
+        self.assertIn("Check the address with the host", err.stderr)
+        self.assertNotIn("takeover", err.stderr)
+        self.assertNotIn("export", err.stderr)
+
+    def test_join_and_status_through_a_tunnel_whose_hub_is_down(self):
+        class Cloudflare530(BaseHTTPRequestHandler):      # what Cloudflare sends when the tunnel's origin is gone
+            def do_GET(self):
+                body = b"<html><body>Error 1033: Argo Tunnel error</body></html>"
+                self.send_response(530)
+                self.send_header("Content-Type", "text/html")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            do_POST = do_GET
+
+            def log_message(self, *args):
+                pass
+
+        server = HTTPServer(("127.0.0.1", 0), Cloudflare530)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        proxy = f"http://127.0.0.1:{server.server_address[1]}"   # every request reaches the fake Cloudflare
+        env = {"http_proxy": proxy, "HTTP_PROXY": proxy, "no_proxy": "", "NO_PROXY": ""}
+        url = "http://dead-hub.trycloudflare.com"
+
+        err = Laptop().run("join", url, "ACN-x", "--as", "z", ok=False, env=env).stderr
+        self.assertIn("hub behind it doesn't", err)
+        self.assertNotIn("takeover", err)
+        self.assertNotIn("isn't an ACN hub", err)
+
+        member = Laptop()
+        Path(member.home, "config.json").write_text(json.dumps(
+            {"name": "bob", "url": url, "token": "acn_x", "code": "ACN-x", "hub": "h"}))
+        out = member.run("status", env=env).stdout
+        self.assertIn("hub behind it doesn't", out)
+        self.assertNotIn("takeover", out)
 
 
 if __name__ == "__main__":

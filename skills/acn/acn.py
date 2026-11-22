@@ -18,8 +18,10 @@ host's laptop; each member's laptop keeps a copy of what they can see, so the te
 """
 import argparse
 import datetime
+import errno
 import hashlib
 import hmac
+import ipaddress
 import json
 import os
 import re
@@ -470,6 +472,8 @@ def call(method, url, path, data=None, token=None, headers=None):
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
+        if tunnel_down(url, e):
+            unreachable(url, e)
         try:
             message = json.loads(e.read()).get("error")
         except ValueError:
@@ -479,11 +483,74 @@ def call(method, url, path, data=None, token=None, headers=None):
         unreachable(url, e)
 
 
-def unreachable(url, error=None):
-    reason = f" ({getattr(error, 'reason', error)})" if error else ""
-    die(f"Can't reach the hub at {url}{reason}. If it's a network problem, see 'When it doesn't connect' in the skill. "
-        "If the host closed the team: `acn.py export` saves your copy, then `acn.py leave`. If the host's laptop is "
-        "gone for good (not closed): `acn.py takeover` hosts the team from your copy.")
+# Error numbers differ by system: macOS, Linux, Windows (WSA codes).
+NO_ROUTE = {errno.EHOSTUNREACH, errno.ENETUNREACH, 65, 51, 113, 101, 10065, 10051}
+REFUSED = {errno.ECONNREFUSED, 61, 111, 10061}
+TUNNEL_DOWN = {502, 503, 530}                       # Cloudflare's "origin unreachable" family
+
+
+def tunnel_down(url, error):
+    """A Cloudflare quick tunnel that answers while the hub behind it doesn't."""
+    host = urllib.parse.urlsplit(url).hostname or ""
+    return (isinstance(error, urllib.error.HTTPError) and error.code in TUNNEL_DOWN
+            and host.endswith(".trycloudflare.com"))
+
+
+def hint(url, error):
+    """One sentence on why `url` can't be reached, read from the error; "" when the error doesn't say."""
+    if tunnel_down(url, error):
+        return ("The tunnel answers but the hub behind it doesn't: the host's hub or laptop stopped. The host runs "
+                "`acn.py host --tunnel` again (same team, new address) and shares the new join line.")
+    if isinstance(error, urllib.error.HTTPError):
+        return ""
+    if isinstance(error, urllib.error.URLError) and isinstance(error.reason, BaseException):
+        error = error.reason
+    if isinstance(error, (socket.timeout, TimeoutError)):
+        return ("No answer in time: the host's firewall may block it (macOS: allow incoming connections for Python), "
+                "or the address is wrong.")
+    if not isinstance(error, OSError):
+        return ""
+    numbers = {error.errno, getattr(error, "winerror", None)}
+    if error.errno is None and error.args and isinstance(error.args[0], int):
+        numbers.add(error.args[0])
+    if isinstance(error, ConnectionRefusedError) or numbers & REFUSED:
+        return ("The laptop answers but nothing listens on that port: is the hub running (`acn.py status` on the "
+                "host)? Is the port right?")
+    if numbers & NO_ROUTE:
+        try:
+            private = ipaddress.ip_address(urllib.parse.urlsplit(url).hostname or "").is_private
+        except ValueError:
+            private = False
+        if private:
+            return ("This laptop can't see the host's laptop on the network. On the same Wi-Fi that usually means "
+                    "the network keeps devices apart (client isolation, guest networks): ask the host to run "
+                    "`acn.py host --tunnel` and use its https join line, or turn off client isolation in the router.")
+    return ""
+
+
+def probe(url):
+    """Why nothing answers as a hub at `url`: the error, or None if something answered."""
+    try:
+        urllib.request.urlopen(f"{url}/api/ping", timeout=5).close()
+        return None
+    except (OSError, ValueError) as e:              # URLError and HTTPError are OSErrors
+        return e
+
+
+def unreachable(url, error=None, joining=False):
+    if isinstance(error, urllib.error.HTTPError):
+        reason = f" (HTTP {error.code})"
+    else:
+        reason = f" ({getattr(error, 'reason', error)})" if error else ""
+    why = hint(url, error) if error else ""
+    first = f"Can't reach the hub at {url}{reason}." + (f" {why}" if why else "")
+    if joining:
+        die(f"{first} Check the address with the host.")
+    if tunnel_down(url, error):
+        die(first)
+    die(f"{first} If it's a network problem, see 'When it doesn't connect' in the skill. If the host closed the "
+        "team: `acn.py export` saves your copy, then `acn.py leave`. If the host's laptop is gone for good (not "
+        "closed): `acn.py takeover` hosts the team from your copy.")
 
 
 def identify(url, code):
@@ -861,8 +928,10 @@ def cmd_join(a):
     url = norm_url(a.url)
     info = identify(url, a.code)
     if info is None:
-        call("GET", url, "/api/ping")                # dies with the "can't reach" explanation
-        die(f"{url} isn't an ACN hub.")
+        error = probe(url)
+        if error is not None and (tunnel_down(url, error) or not isinstance(error, urllib.error.HTTPError)):
+            unreachable(url, error, joining=True)
+        die(f"{url} isn't an ACN hub.")                # something answered, but not as a hub
     if not info["proven"]:
         die("Wrong team code for that hub (or it isn't your team's hub). Check the address and code with the host.")
     cfg = load(CONFIG)
@@ -898,6 +967,8 @@ def rejoin(a, url, info, cfg):
     try:
         urllib.request.urlopen(req, timeout=TIMEOUT).close()
     except urllib.error.HTTPError as e:
+        if tunnel_down(url, e):
+            unreachable(url, e)
         if e.code != 401:
             die(f"The hub answered HTTP {e.code}.")
         token = call("POST", url, "/api/join", {"code": a.code, "name": name})["token"]
@@ -1059,9 +1130,14 @@ def cmd_status(_):
             closing = f" Closing at {stamp(info['close_at'])}." if info.get("close_at") else ""
             print(f"Member: {cfg['name']} at {cfg['url']} (reachable).{closing}")
         else:
-            print(f"Member: {cfg['name']} at {cfg['url']}, which can't be reached. If the host closed the team: "
-                  "`acn.py export`, then `acn.py leave`. If the host's laptop is gone for good (not closed): "
-                  "`acn.py takeover`.")
+            error = probe(cfg["url"])
+            why = hint(cfg["url"], error) if error is not None else ""
+            if tunnel_down(cfg["url"], error):
+                print(f"Member: {cfg['name']} at {cfg['url']}, which can't be reached. {why}")
+            else:
+                print(f"Member: {cfg['name']} at {cfg['url']}, which can't be reached." + (f" {why}" if why else "")
+                      + " If the host closed the team: `acn.py export`, then `acn.py leave`. If the host's laptop "
+                      "is gone for good (not closed): `acn.py takeover`.")
     else:
         print("Not in a team.")
     if state:

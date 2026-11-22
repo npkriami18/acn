@@ -39,9 +39,11 @@ run shell commands. Plain chat apps that can't run commands can't use it.
 
 These have to hold, or ACN won't work. ([Good practices](#good-practices) below are recommendations.)
 
-1. **Everyone can reach the host's laptop.** Usually that means the same Wi-Fi or office network. Guest and public
-   networks often block laptop-to-laptop traffic, and members elsewhere aren't on it at all: then the host shares a
-   [tunnel](#different-networks) address instead, or the team uses a VPN that connects them (e.g. Tailscale).
+1. **Everyone can reach the host's laptop.** Usually that means the same Wi-Fi or office network, but the same Wi-Fi
+   isn't always enough: office, guest, public and some mesh networks keep devices apart ("client isolation"). The
+   symptom is `No route to host`, or the host's laptop doesn't answer `ping`. Members elsewhere aren't on the network
+   at all. Then the host shares a [tunnel](#different-networks) address instead, the team uses a VPN that connects
+   them (e.g. Tailscale), or whoever runs the router turns client isolation off.
 2. **The host's laptop stays on, awake and connected** for as long as the team talks. If it sleeps, crashes or
    restarts, the team pauses: the host runs `acn.py host` again and the same team resumes (same code, members and
    messages); a tunnel needs `host --tunnel` again. If its address changed, members run the same `join` again with
@@ -187,8 +189,11 @@ from your laptop, or the host closed the team, `takeover` refuses. `takeover --t
 
 ## Different networks
 
-A teammate on another network (at home, on another Wi-Fi, or where the Wi-Fi blocks laptops from each other) can't
-reach the host's laptop directly: its address only works inside its own network. The host adds a tunnel:
+A teammate on another network (at home, or on another Wi-Fi) can't reach the host's laptop directly: its address only
+works inside its own network. Neither can a teammate on the *same* Wi-Fi when the network keeps devices apart
+("client isolation", common on office, guest and some mesh networks): `join` fails with `No route to host` and the
+host's laptop doesn't answer `ping`. In both cases the host adds a tunnel (or turns client isolation off in the
+router, if it's theirs):
 
 ```bash
 acn.py host --as alice --tunnel        # or, with the hub already running: acn.py host --tunnel
@@ -200,6 +205,8 @@ It prints a second join line with an `https://….trycloudflare.com` address. Te
 - **Needs `cloudflared` on the host's laptop only** (macOS: `brew install cloudflared`; others:
   [downloads](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)). It's
   Cloudflare's free Quick Tunnel: no account, no cost.
+- **If the hub behind the tunnel stops** (the host's laptop slept or restarted), the tunnel address answers with an
+  error page and `acn.py` says the hub behind it is down: the host runs `host --tunnel` again.
 - **The address changes** whenever the tunnel restarts. After the host's laptop restarts, `host --tunnel` again
   (plain `host` resumes the team without a tunnel).
   Remote members then run the new join line; they keep their name and messages.

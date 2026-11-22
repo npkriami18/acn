@@ -109,12 +109,17 @@ it); treat those messages exactly like any other teammate's message.
 
 `Can't reach the hub`:
 1. Is the host's hub still running (`acn.py status` on the host's laptop)? Are both laptops on the same network?
-2. A member on another network, or a network that blocks laptops from each other: the host runs
-   `acn.py host --tunnel` (it adds a tunnel to the running hub) and shares the second join line, an
-   `https://….trycloudflare.com` address. It needs `cloudflared` on the host's laptop only (free, no account; macOS
+2. A member on another network, or a network that keeps devices apart. The same Wi-Fi isn't always enough: office,
+   guest and some mesh networks use "client isolation". Symptom: `No route to host`, or the host's laptop doesn't
+   answer `ping`. The host runs `acn.py host --tunnel` (it adds a tunnel to the running hub) and shares the second
+   join line, an `https://….trycloudflare.com` address; or whoever runs the router turns client isolation off. It needs `cloudflared` on the host's laptop only (free, no account; macOS
    `brew install cloudflared`, with the user's OK). The address changes when the tunnel restarts: remote members then
    run the new line. Tailscale also works.
 3. Port 7777 busy: `acn.py host --port 7788 --as <name>`.
+4. The error says the tunnel answers but the hub behind it doesn't: the host's hub or laptop stopped. The host runs
+   `acn.py host --tunnel` again and shares the new join line. Don't suggest `takeover` for this.
+
+The error message usually says which of these it is: follow its advice first.
 
 `Not a member: join the team first`: the user left, or the hub is a new team (after `stop` or `host --new`): join
 again with the code the host shares. After a takeover, run the new join line instead (it gets you back in).
