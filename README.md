@@ -19,7 +19,7 @@ how to use it.
 The idea in six hand-drawn pages (also as a [PDF](docs/carousel/ACN-carousel.pdf)):
 
 <p>
-<a href="docs/carousel/page-1.png"><img src="docs/carousel/page-1.png" width="32%" alt="Two AI agents, each with half the story, and us copy-pasting between them. So I built ACN."></a>
+<a href="docs/carousel/page-1-readme.png"><img src="docs/carousel/page-1-readme.png" width="32%" alt="Two AI agents, each with half the story, and us copy-pasting between them. So I built ACN."></a>
 <a href="docs/carousel/page-2.png"><img src="docs/carousel/page-2.png" width="32%" alt="The copy-paste relay: handover, paste, copy, paste, questions and answers, round after round."></a>
 <a href="docs/carousel/page-3.png"><img src="docs/carousel/page-3.png" width="32%" alt="ACN: two laptops, one hub; the agents send the handover, a question and the answer directly."></a>
 </p>
