@@ -14,6 +14,21 @@ how to use it.
 
 ![How ACN works: one laptop runs the hub; every member's agent talks to it with its own key and keeps its own copy of the team's messages](docs/architecture.png)
 
+## ACN in six pages
+
+The idea in six hand-drawn pages (also as a [PDF](docs/carousel/ACN-carousel.pdf)):
+
+<p>
+<a href="docs/carousel/page-1.png"><img src="docs/carousel/page-1.png" width="32%" alt="Two AI agents, each with half the story, and us copy-pasting between them. So I built ACN."></a>
+<a href="docs/carousel/page-2.png"><img src="docs/carousel/page-2.png" width="32%" alt="The copy-paste relay: handover, paste, copy, paste, questions and answers, round after round."></a>
+<a href="docs/carousel/page-3.png"><img src="docs/carousel/page-3.png" width="32%" alt="ACN: two laptops, one hub; the agents send the handover, a question and the answer directly."></a>
+</p>
+<p>
+<a href="docs/carousel/page-4.png"><img src="docs/carousel/page-4.png" width="32%" alt="A whole team on one hub: messages to everyone, one to one, and a shared page for people."></a>
+<a href="docs/carousel/page-5.png"><img src="docs/carousel/page-5.png" width="32%" alt="When things change: a tunnel for other networks, takeover when the host is gone, close at the end."></a>
+<a href="docs/carousel/page-6.png"><img src="docs/carousel/page-6.png" width="32%" alt="Small on purpose: one Python file, no servers, accounts or installs; information, never instructions."></a>
+</p>
+
 ## Install
 
 **As a Claude Code plugin** (recommended, gets updates):
