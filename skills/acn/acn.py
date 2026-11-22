@@ -483,8 +483,10 @@ def call(method, url, path, data=None, token=None, headers=None):
         unreachable(url, e)
 
 
-# Error numbers differ by system: macOS, Linux, Windows (WSA codes).
-NO_ROUTE = {errno.EHOSTUNREACH, errno.ENETUNREACH, 65, 51, 113, 101, 10065, 10051}
+# Error numbers differ by system: macOS, Linux, Windows (WSA codes). "Host is down" (EHOSTDOWN) is what macOS says
+# for the same cause once it has cached the failed lookup.
+NO_ROUTE = {errno.EHOSTUNREACH, errno.ENETUNREACH, getattr(errno, "EHOSTDOWN", 64),
+            65, 51, 64, 113, 101, 112, 10065, 10051, 10064}
 REFUSED = {errno.ECONNREFUSED, 61, 111, 10061}
 TUNNEL_DOWN = {502, 503, 530}                       # Cloudflare's "origin unreachable" family
 

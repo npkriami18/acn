@@ -589,7 +589,8 @@ class ReachabilityTest(unittest.TestCase):
     def test_no_route_on_the_local_network_points_at_client_isolation(self):
         for error in (OSError(errno.EHOSTUNREACH, "No route to host"), OSError(errno.EHOSTUNREACH),
                       urllib.error.URLError(OSError(errno.EHOSTUNREACH, "No route to host")),
-                      OSError(10065, "WSAEHOSTUNREACH")):
+                      OSError(10065, "WSAEHOSTUNREACH"), OSError(errno.EHOSTDOWN), OSError(64, "Host is down"),
+                      OSError(112, "Host is down"), OSError(10064, "WSAEHOSTDOWN")):
             text = self.acn.hint("http://192.168.1.13:7777", error)
             self.assertIn("client isolation", text, error)
             self.assertIn("host --tunnel", text, error)
