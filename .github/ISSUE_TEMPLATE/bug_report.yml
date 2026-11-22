@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in ACN doesn't work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security problem? Don't file it here**: use the Security tab → "Report a vulnerability".
+        Please remove team codes, keys and private message text from anything you paste.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. python3 acn.py host --as alice
+        2. python3 acn.py join ... --as bob
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Error output
+      description: The full error or output, if any.
+      render: text
+  - type: dropdown
+    id: role
+    attributes:
+      label: Whose laptop showed the problem?
+      options: [The host, A member, Both, Not sure]
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: How do members reach the hub?
+      options: [Same Wi-Fi / office network, Tunnel (host --tunnel), VPN (e.g. Tailscale), Only on one laptop, Not sure]
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: e.g. Windows 11, macOS 15, Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      description: Output of `python3 --version`
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent used, if any
+      placeholder: e.g. Claude Code terminal, Claude desktop app, none (ran commands myself)

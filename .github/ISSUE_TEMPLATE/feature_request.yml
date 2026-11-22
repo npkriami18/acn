@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe what your team is trying to do and what gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: How you picture it working. Commands or example output help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you've tried instead?
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Fits ACN's rules
+      options:
+        - label: This can work with the Python standard library only, without installs or accounts

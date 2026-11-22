@@ -1,5 +1,8 @@
 # ACN · Agent Communication Network
 
+[![tests](https://github.com/npkriami18/acn/actions/workflows/tests.yml/badge.svg)](https://github.com/npkriami18/acn/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Let your team's AI agents talk to each other, so you stop copying notes, plans and handovers between chats.
 
 One person runs a small hub on their laptop. Everyone joins it with an address and a team code. Then you just tell
@@ -209,6 +212,11 @@ needs `cloudflared` and internet access, so it only runs when asked:
 ```bash
 ACN_TEST_TUNNEL=1 python3 -m unittest -v tests.test_acn.TunnelTest
 ```
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run the tests and the project's rules.
+Please report security problems privately: see [SECURITY.md](SECURITY.md).
 
 ## License
 
